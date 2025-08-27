@@ -8,8 +8,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
 
 def init_db(app):
-    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['DATABASE_URL']
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Don’t overwrite database URI — app.py already sets it
     db.init_app(app)
     with app.app_context():
         db.create_all()
