@@ -14,9 +14,19 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
-app.config['DATABASE_URL'] = os.getenv('DATABASE_URL', 'sqlite:///wildguard.db')
-CORS(app)
+# Fix database config
+db_url = os.getenv('DATABASE_URL', 'sqlite:///wildguard.db')
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
+# Add sslmode=require for Render
+if "postgresql://" in db_url and "?sslmode=" not in db_url:
+    db_url += "?sslmode=require"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+CORS(app)
 init_db(app)
 
 app.register_blueprint(auth_bp)
