@@ -5,22 +5,19 @@ import os
 from dotenv import load_dotenv
 from auth import auth_bp
 from utils.token_utils import verify_token
-from utils.db import init_db
+from utils.supabase import supabase_client
 import pickle
 import pandas as pd
 from pathlib import Path
+import io
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret')
-app.config['DATABASE_URL'] = os.getenv('DATABASE_URL', 'sqlite:///wildguard.db')
 CORS(app)
 
-init_db(app)
-
-app.register_blueprint(auth_bp)
-
+app.register_blueprint(auth_bp, url_prefix='/auth')
 predictions_cache = []
 
 def token_required(f):
@@ -90,7 +87,43 @@ except Exception as exc:
 # ======= end model loading =======
 
 
-@app.route('/predict', methods=['GET'])
+@app.route('/api/upload', methods=['POST'])
+@token_required
+def upload_csv():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        df = pd.read_csv(file)
+
+        # Input validation
+        required_columns = {'latitude', 'longitude'}
+        if not required_columns.issubset(df.columns):
+            return jsonify({'error': f'Missing required columns. Please ensure the CSV contains {required_columns}.'}), 400
+
+        # Insert metadata into Supabase
+        response = supabase_client.table('datasets').insert({
+            'filename': file.filename,
+            'row_count': len(df),
+            'columns': df.columns.tolist()
+        }).execute()
+
+        if not response.data:
+            return jsonify({'error': 'Failed to save dataset metadata'}), 500
+
+        return jsonify({
+            'message': 'File uploaded and processed successfully',
+            'filename': file.filename,
+            'rows': len(df),
+            'columns': df.columns.tolist()
+        }), 200
+    except Exception as e:
+        return jsonify({'error': f'Failed to process file: {e}'}), 500
+
+@app.route('/api/predict', methods=['GET'])
 @token_required
 def predict():
     global predictions_cache, model, scaler
@@ -157,4 +190,4 @@ def hotspots():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=os.getenv('PORT', 5001))

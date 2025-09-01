@@ -1,17 +1,30 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-const api = axios.create({
-    baseURL: API_URL,
+const apiClient = axios.create({
+  baseURL: '/api',
 });
 
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
-export default api;
+export const uploadCsv = (file, onUploadProgress) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return apiClient.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress,
+  });
+};
+
+export const login = (credentials) => apiClient.post('/auth/login', credentials);
+export const register = (credentials) => apiClient.post('/auth/register', credentials);
+export const getPredictions = () => apiClient.get('/predict');
+export const getHotspots = () => apiClient.get('/hotspots');

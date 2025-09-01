@@ -1,3 +1,38 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@tailwind base; 
+ @tailwind components; 
+ @tailwind utilities; 
+ 
+ /* global layout */ 
+ html, body, #root { height: 100%; } 
+ 
+ body { 
+   @apply bg-wg-sand text-wg-deep font-sans; 
+   -webkit-font-smoothing: antialiased; 
+   -moz-osx-font-smoothing: grayscale; 
+   background-image: linear-gradient(180deg, rgba(11,107,79,0.03), rgba(0,0,0,0)); 
+ } 
+ 
+ /* helpers */ 
+ .btn-primary { 
+   @apply px-4 py-2 rounded-xl font-semibold text-white bg-wg-accent hover:bg-[#ff6c0f] disabled:opacity-60 transition; 
+ } 
+ .card { 
+   @apply bg-white rounded-2xl shadow-md p-4; 
+ } 
+ .table-preview th { 
+   @apply text-xs font-medium text-wg-muted uppercase tracking-wider; 
+ } 
+ .table-preview td { 
+   @apply text-sm text-wg-deep; 
+ } 
+ 
+ /* focus styles for accessibility */ 
+ :focus { 
+   outline: 3px solid rgba(11,107,79,0.18); 
+   outline-offset: 2px; 
+ } 
+ 
+ /* responsive helpers */ 
+ @media (max-width: 640px) { 
+   .table-preview { display: block; overflow-x: auto; } 
+ }
